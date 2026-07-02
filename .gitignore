@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+node_modules/
+dist/
+uploads/
+*.docx
+!backend/templates/*.docx
+.DS_Store
+.idea/
+*.log
