@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     TEMPLATES_DIR: str = ""
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
     PORT: int = 8000
+    STATIC_DIR: str = ""
     DADATA_API_KEY: str = ""
     # Исполнитель (НСК) — один на все договоры; director = генеральный директор (одно лицо)
     EXECUTOR_SHORT_NAME: str = "ООО «НСК-Серт»"
