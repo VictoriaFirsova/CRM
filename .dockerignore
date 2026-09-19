@@ -1,0 +1,11 @@
+.git
+.idea
+.venv
+**/__pycache__
+**/.venv
+**/.env
+**/node_modules
+frontend/dist
+backend/uploads
+backend/.venv
+*.log
