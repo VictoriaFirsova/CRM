@@ -19,10 +19,11 @@ COPY --from=frontend /fe/dist /app/static
 RUN mkdir -p uploads templates
 
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+RUN sed -i 's/\r$//' /app/start.sh && chmod +x /app/start.sh
 
 ENV STATIC_DIR=/app/static
 ENV UPLOAD_DIR=/app/uploads
-EXPOSE 8000
+ENV PORT=8080
+EXPOSE 8080
 
 CMD ["/app/start.sh"]

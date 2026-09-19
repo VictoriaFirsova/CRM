@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlparse
@@ -8,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import ENV_FILE, settings
+from app.core.config import settings
 from app.core.database import Base, engine
 from app.routers import auth, acts, clients, contracts, dashboard, documents, invoices, payments
 from app.routers import settings as settings_router
@@ -16,27 +18,37 @@ from app.routers import settings as settings_router
 logger = logging.getLogger(__name__)
 
 
+def _db_location() -> tuple[str | None, str | None]:
+    parsed = urlparse(settings.DATABASE_URL.replace("+asyncpg", ""))
+    return parsed.hostname, parsed.username
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-    except Exception as e:
-        parsed = urlparse(settings.DATABASE_URL.replace("+asyncpg", ""))
-        logger.error(
-            "Не удалось подключиться к PostgreSQL: %s@%s:%s/%s. "
-            "Проверьте backend/.env (файл: %s).",
-            parsed.username,
-            parsed.hostname,
-            parsed.port,
-            parsed.path.lstrip("/"),
-            ENV_FILE,
-        )
+    host, user = _db_location()
+    last_error: Exception | None = None
+    for attempt in range(1, 16):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("PostgreSQL OK (%s@%s)", user, host)
+            last_error = None
+            break
+        except Exception as e:
+            last_error = e
+            logger.warning("PostgreSQL attempt %s/15 (%s@%s): %s", attempt, user, host, e)
+            await asyncio.sleep(2)
+
+    if last_error:
+        on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
+        if on_railway and host in (None, "localhost", "127.0.0.1"):
+            raise RuntimeError(
+                "На Railway не задан DATABASE_URL (сейчас localhost). "
+                "В Variables веб-сервиса: DATABASE_URL = ${{Postgres.DATABASE_URL}}, затем Redeploy."
+            ) from last_error
         raise RuntimeError(
-            f"Ошибка подключения к БД. Отредактируйте {ENV_FILE} — "
-            f"укажите верный DATABASE_URL (сейчас user={parsed.username}). "
-            f"Оригинал: {e}"
-        ) from e
+            f"Нет связи с PostgreSQL ({user}@{host}). Проверьте DATABASE_URL. Оригинал: {last_error}"
+        ) from last_error
     yield
 
 

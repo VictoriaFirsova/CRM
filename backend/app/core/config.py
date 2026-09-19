@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,10 +17,27 @@ def normalize_database_url(url: str) -> str:
     if url.startswith("postgresql://") and "+asyncpg" not in url:
         url = "postgresql+asyncpg://" + url[len("postgresql://") :]
     url = url.replace("sslmode=require", "ssl=require")
-    if "railway" in url and "ssl=" not in url:
+    if "railway" in url.lower() and "ssl=" not in url:
         sep = "&" if "?" in url else "?"
         url = f"{url}{sep}ssl=require"
     return url
+
+
+def resolve_database_url(value: str | None) -> str:
+    for key in ("DATABASE_PRIVATE_URL", "DATABASE_URL", "POSTGRES_URL"):
+        raw = os.environ.get(key)
+        if raw and raw.strip():
+            return normalize_database_url(raw)
+    if os.environ.get("PGHOST"):
+        user = os.environ.get("PGUSER") or "postgres"
+        password = os.environ.get("PGPASSWORD") or ""
+        host = os.environ["PGHOST"]
+        port = os.environ.get("PGPORT") or "5432"
+        name = os.environ.get("PGDATABASE") or "railway"
+        return normalize_database_url(f"postgresql://{user}:{password}@{host}:{port}/{name}")
+    if value:
+        return normalize_database_url(str(value))
+    return "postgresql+asyncpg://crm:crm@localhost:5432/crm"
 
 
 class Settings(BaseSettings):
@@ -64,7 +82,7 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _async_database_url(cls, value: str) -> str:
-        return normalize_database_url(str(value)) if value else value
+        return resolve_database_url(value)
 
 
 def get_templates_dir() -> Path:
