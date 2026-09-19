@@ -1,10 +1,25 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/ — всегда ищем .env здесь, даже если PyCharm запускает из корня CRM
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE = BACKEND_DIR / ".env"
+
+
+def normalize_database_url(url: str) -> str:
+    """Railway/Heroku дают postgres://…; SQLAlchemy + asyncpg ждут postgresql+asyncpg://."""
+    url = url.strip()
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    if url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+    url = url.replace("sslmode=require", "ssl=require")
+    if "railway" in url and "ssl=" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}ssl=require"
+    return url
 
 
 class Settings(BaseSettings):
@@ -23,6 +38,7 @@ class Settings(BaseSettings):
     # Пусто = backend/templates (шаблоны в репозитории, для сервера)
     TEMPLATES_DIR: str = ""
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    PORT: int = 8000
     DADATA_API_KEY: str = ""
     # Исполнитель (НСК) — один на все договоры; director = генеральный директор (одно лицо)
     EXECUTOR_SHORT_NAME: str = "ООО «НСК-Серт»"
@@ -43,6 +59,11 @@ class Settings(BaseSettings):
     EXECUTOR_CORRESPONDENT_ACCOUNT: str = "30101810200000000593"
     EXECUTOR_BIK: str = "044525593"
     EXECUTOR_ACTS_ON_BASIS: str = "Устава"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _async_database_url(cls, value: str) -> str:
+        return normalize_database_url(str(value)) if value else value
 
 
 def get_templates_dir() -> Path:

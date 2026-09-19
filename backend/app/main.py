@@ -39,10 +39,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="CRM API", version="1.0.0", lifespan=lifespan)
 
-origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
+origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.up\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

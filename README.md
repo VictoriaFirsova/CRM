@@ -64,6 +64,35 @@ python -m scripts.seed_admin admin@example.com admin123
 
 ---
 
+## Деплой на Railway
+
+Нужны три сервиса в одном проекте: **PostgreSQL**, **backend**, **frontend**.
+
+1. Залейте репозиторий на GitHub (уже есть `origin`).
+2. На [railway.app](https://railway.app) → New Project → **Deploy from GitHub repo**.
+3. Добавьте плагин **PostgreSQL**.
+4. Сервис **backend**
+   - Root Directory: `backend`
+   - Variables:
+     - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+     - `SECRET_KEY` = длинная случайная строка
+     - `CORS_ORIGINS` = `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}`
+     - `UPLOAD_DIR` = `/app/uploads`
+5. Сервис **frontend**
+   - Root Directory: `frontend`
+   - Variables:
+     - `BACKEND_UPSTREAM` = `http://${{backend.RAILWAY_PRIVATE_DOMAIN}}:${{backend.PORT}}`
+6. Generate Domain у frontend (и при желании у backend).
+7. Создайте админа:
+
+```bash
+railway run --service backend python -m scripts.seed_admin admin@example.com ваш_пароль
+```
+
+Файлы загрузок (`uploads`) на Railway без Volume пропадут при редеплое — при необходимости подключите Volume на `/app/uploads`.
+
+---
+
 ## Быстрый старт (Docker)
 
 ```bash
