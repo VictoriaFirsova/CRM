@@ -11,6 +11,7 @@ import DocumentsPage from './pages/DocumentsPage'
 import InvoicesPage from './pages/InvoicesPage'
 import ActsPage from './pages/ActsPage'
 import UsersPage from './pages/UsersPage'
+import PayrollPage from './pages/PayrollPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="acts" element={<ActsPage />} />
         <Route path="documents" element={<DocumentsPage />} />
+        <Route path="payroll" element={<PayrollPage />} />
         <Route path="users" element={<UsersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

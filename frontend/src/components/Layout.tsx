@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   FileCheck,
   FolderOpen,
+  Wallet,
   LogOut,
   Moon,
   Sun,
@@ -21,6 +22,7 @@ const nav = [
   { to: '/invoices', label: 'Счета', icon: FileSpreadsheet },
   { to: '/acts', label: 'Акты', icon: FileCheck },
   { to: '/documents', label: 'Документы', icon: FolderOpen },
+  { to: '/payroll', label: 'Расчёт ЗП', icon: Wallet },
 ]
 
 const pageTitles: Record<string, string> = {
@@ -30,6 +32,7 @@ const pageTitles: Record<string, string> = {
   '/invoices': 'Счета',
   '/acts': 'Акты',
   '/documents': 'Документы',
+  '/payroll': 'Расчёт ЗП',
   '/users': 'Пользователи',
 }
 

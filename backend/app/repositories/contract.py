@@ -160,10 +160,23 @@ class ContractRepository:
         contract_id: int,
         items: list[tuple[str, str, Decimal, bool]],
     ) -> None:
+        existing = await self.db.execute(
+            select(ContractLineItem)
+            .where(ContractLineItem.contract_id == contract_id)
+            .order_by(ContractLineItem.position)
+        )
+        old_rows = list(existing.scalars().all())
+        preserved = [
+            (row.cost_price, row.share_half, row.salary_paid) for row in old_rows
+        ]
+
         await self.db.execute(
             delete(ContractLineItem).where(ContractLineItem.contract_id == contract_id)
         )
         for position, (document_name, product_name, price, vat_exempt) in enumerate(items):
+            cost_price = share_half = salary_paid = None
+            if position < len(preserved):
+                cost_price, share_half, salary_paid = preserved[position]
             self.db.add(
                 ContractLineItem(
                     contract_id=contract_id,
@@ -172,6 +185,9 @@ class ContractRepository:
                     product_name=product_name.strip(),
                     price=price,
                     vat_exempt=vat_exempt,
+                    cost_price=cost_price,
+                    share_half=bool(share_half) if share_half is not None else False,
+                    salary_paid=bool(salary_paid) if salary_paid is not None else False,
                 )
             )
         await self.db.flush()

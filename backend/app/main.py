@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth, acts, clients, contracts, dashboard, documents, invoices, payments, users
+from app.routers import auth, acts, clients, contracts, dashboard, documents, invoices, payments, payroll, users
 from app.routers import settings as settings_router
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,9 @@ async def lifespan(app: FastAPI):
         ) from last_error
 
     from app.services.bootstrap_admin import ensure_bootstrap_admin
+    from app.services.schema_migrate import ensure_schema_patches
 
+    await ensure_schema_patches()
     await ensure_bootstrap_admin()
     yield
 
@@ -77,6 +79,7 @@ app.include_router(documents.router, prefix="/api")
 app.include_router(invoices.router, prefix="/api")
 app.include_router(acts.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(payroll.router, prefix="/api")
 app.include_router(settings_router.router, prefix="/api")
 
 

@@ -18,5 +18,9 @@ class ContractLineItem(Base):
     product_name: Mapped[str] = mapped_column(Text)
     price: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     vat_exempt: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Расчёт ЗП: ((price * 0.94) - cost) * 0.7, при share_half ÷ 2
+    cost_price: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    share_half: Mapped[bool] = mapped_column(Boolean, default=False)
+    salary_paid: Mapped[bool] = mapped_column(Boolean, default=False)
 
     contract: Mapped["Contract"] = relationship(back_populates="line_items")
