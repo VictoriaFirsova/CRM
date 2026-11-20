@@ -95,9 +95,16 @@ export default function Layout() {
         <div className="flex items-center justify-between border-b border-surface-border/80 bg-surface-sidebar/50 px-6 py-3 backdrop-blur-sm">
           <span className="text-sm font-medium text-foreground-muted">{sectionTitle}</span>
           <div className="flex items-center gap-3">
+            {user?.role === 'ADMIN' && (
+              <NavLink to="/users" className="btn-secondary text-sm">
+                Пользователи
+              </NavLink>
+            )}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
-              <p className="text-[11px] uppercase tracking-wide text-foreground-faint">{user?.role}</p>
+              <p className="text-[11px] uppercase tracking-wide text-foreground-faint">
+                {user?.role === 'ADMIN' ? 'Администратор' : user?.role}
+              </p>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary">
               {user?.full_name?.charAt(0) ?? '?'}

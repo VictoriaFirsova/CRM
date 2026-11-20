@@ -36,7 +36,7 @@ class AuthService:
         return await self.user_repo.create(user)
 
     async def login(self, data: UserLogin) -> TokenResponse:
-        user = await self.user_repo.get_by_email(data.email)
+        user = await self.user_repo.get_by_email(data.email.strip().lower())
         if not user or not verify_password(data.password, user.hashed_password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if not user.is_active:
