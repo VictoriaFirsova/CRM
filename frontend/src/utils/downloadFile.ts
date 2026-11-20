@@ -65,3 +65,20 @@ export async function downloadInvoice(invoiceId: number) {
   link.click()
   window.URL.revokeObjectURL(url)
 }
+
+export async function downloadPayrollExport(lineIds: number[]) {
+  const response = await api.post('/payroll/export', { line_ids: lineIds }, { responseType: 'blob' })
+  const disposition = response.headers['content-disposition'] as string | undefined
+  let filename = 'расчёт_зп.xlsx'
+  if (disposition) {
+    const match = /filename\*=UTF-8''([^;]+)|filename=([^;]+)/i.exec(disposition)
+    const raw = match?.[1] || match?.[2]
+    if (raw) filename = decodeURIComponent(raw.replace(/"/g, '').trim())
+  }
+  const url = window.URL.createObjectURL(response.data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.URL.revokeObjectURL(url)
+}

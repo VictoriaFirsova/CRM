@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Wallet } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Download, Wallet } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
 import PageHeader from '../components/PageHeader'
 import { getApiErrorMessage } from '../utils/apiError'
+import { downloadPayrollExport } from '../utils/downloadFile'
 import { paymentStatusLabels } from '../utils/labels'
 import type { PaymentStatus } from '../types'
 
@@ -53,6 +54,8 @@ export default function PayrollPage() {
   const [year, setYear] = useState<string>(String(now.getFullYear()))
   const [month, setMonth] = useState<string>('')
   const [hidePaid, setHidePaid] = useState(false)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [exporting, setExporting] = useState(false)
   const qc = useQueryClient()
 
   const params = useMemo(() => {
@@ -68,6 +71,32 @@ export default function PayrollPage() {
     queryFn: async () => (await api.get<PayrollList>('/payroll/lines', { params })).data,
   })
 
+  const items = data?.items ?? []
+
+  useEffect(() => {
+    setSelected(new Set())
+  }, [params])
+
+  const allSelected = items.length > 0 && items.every((row) => selected.has(row.id))
+  const someSelected = items.some((row) => selected.has(row.id))
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(new Set())
+      return
+    }
+    setSelected(new Set(items.map((row) => row.id)))
+  }
+
+  const toggleOne = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const updateMutation = useMutation({
     mutationFn: ({
       id,
@@ -82,15 +111,47 @@ export default function PayrollPage() {
     onError: (err) => toast.error(getApiErrorMessage(err, 'Не удалось сохранить')),
   })
 
-  const years = [now.getFullYear() + 1, now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2, now.getFullYear() - 3]
+  const years = [
+    now.getFullYear() + 1,
+    now.getFullYear(),
+    now.getFullYear() - 1,
+    now.getFullYear() - 2,
+    now.getFullYear() - 3,
+  ]
 
-  const items = data?.items ?? []
+  const exportSelected = async () => {
+    const ids = items.filter((row) => selected.has(row.id)).map((row) => row.id)
+    if (ids.length === 0) {
+      toast.error('Отметьте строки для выгрузки')
+      return
+    }
+    setExporting(true)
+    try {
+      await downloadPayrollExport(ids)
+      toast.success(`Выгружено строк: ${ids.length}`)
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Не удалось выгрузить Excel'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div>
       <PageHeader
         title="Расчёт ЗП"
         subtitle="Строки таблицы №1 из оплаченных и предоплаченных приложений, где вы ответственный"
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!someSelected || exporting}
+            onClick={() => void exportSelected()}
+          >
+            <Download size={16} />
+            {exporting ? 'Выгрузка…' : `В Excel${someSelected ? ` (${selected.size})` : ''}`}
+          </button>
+        }
       />
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -150,19 +211,28 @@ export default function PayrollPage() {
         </div>
       ) : (
         <div className="table-wrap">
-          <table className="data-table table-fixed min-w-[960px]">
+          <table className="data-table table-fixed min-w-[1020px]">
             <colgroup>
-              <col className="w-[18%]" />
-              <col className="w-[14%]" />
-              <col className="w-[22%]" />
+              <col className="w-[4%]" />
+              <col className="w-[17%]" />
+              <col className="w-[13%]" />
+              <col className="w-[20%]" />
+              <col className="w-[10%]" />
               <col className="w-[11%]" />
-              <col className="w-[12%]" />
-              <col className="w-[11%]" />
-              <col className="w-[6%]" />
-              <col className="w-[6%]" />
+              <col className="w-[10%]" />
+              <col className="w-[5%]" />
+              <col className="w-[10%]" />
             </colgroup>
             <thead>
               <tr>
+                <th className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    title="Выделить все"
+                    onChange={toggleAll}
+                  />
+                </th>
                 <th>Договор</th>
                 <th>Документ</th>
                 <th>Продукция</th>
@@ -177,12 +247,19 @@ export default function PayrollPage() {
             </thead>
             <tbody>
               {items.map((row) => (
-                <tr
-                  key={row.id}
-                  className={row.salary_paid ? 'opacity-60' : undefined}
-                >
+                <tr key={row.id} className={row.salary_paid ? 'opacity-60' : undefined}>
+                  <td className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.id)}
+                      onChange={() => toggleOne(row.id)}
+                    />
+                  </td>
                   <td>
-                    <Link to={`/contracts/${row.contract_id}`} className="font-medium text-primary hover:underline">
+                    <Link
+                      to={`/contracts/${row.contract_id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       {row.contract_label}
                     </Link>
                     {row.client_name && (
@@ -195,7 +272,9 @@ export default function PayrollPage() {
                   </td>
                   <td className="break-words">{row.document_name}</td>
                   <td className="break-words text-foreground-muted">{row.product_name}</td>
-                  <td className="text-right whitespace-nowrap tabular-nums">{money(Number(row.price))}</td>
+                  <td className="text-right whitespace-nowrap tabular-nums">
+                    {money(Number(row.price))}
+                  </td>
                   <td>
                     <input
                       type="number"
@@ -252,7 +331,7 @@ export default function PayrollPage() {
 
       <p className="mt-4 text-xs text-foreground-faint">
         Формула: ((цена × 0,94) − себестоимость) × 0,7; при «÷2» — половина. Выплаченные строки не входят в «К
-        выплате». Фильтр года/месяца — по дате приложения.
+        выплате». Фильтр года/месяца — по дате приложения. Отметьте строки слева и нажмите «В Excel».
       </p>
     </div>
   )

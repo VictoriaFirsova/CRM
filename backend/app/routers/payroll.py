@@ -1,7 +1,15 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Query
+from fastapi.responses import Response
 
 from app.core.deps import CurrentUser, DbSession
-from app.schemas.payroll import PayrollLineResponse, PayrollLineUpdate, PayrollListResponse
+from app.schemas.payroll import (
+    PayrollExportRequest,
+    PayrollLineResponse,
+    PayrollLineUpdate,
+    PayrollListResponse,
+)
 from app.services.payroll import PayrollService
 
 router = APIRouter(prefix="/payroll", tags=["payroll"])
@@ -28,3 +36,20 @@ async def update_payroll_line(
     db: DbSession,
 ):
     return await PayrollService(db).update_line(current_user, line_id, data)
+
+
+@router.post("/export")
+async def export_payroll(
+    data: PayrollExportRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+):
+    content = await PayrollService(db).export_xlsx(current_user, data.line_ids)
+    filename = "raschet_zp.xlsx"
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}; filename*=UTF-8''{quote('расчёт_зп.xlsx')}"
+        },
+    )

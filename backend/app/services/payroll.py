@@ -9,6 +9,7 @@ from app.models.contract_line_item import ContractLineItem
 from app.models.enums import ContractKind, PaymentStatus
 from app.models.user import User
 from app.schemas.payroll import PayrollLineResponse, PayrollLineUpdate, PayrollListResponse
+from app.services.payroll_xls import build_payroll_xlsx
 
 TAX_KEEP = Decimal("0.94")
 SHARE_COMPANY = Decimal("0.7")
@@ -134,3 +135,29 @@ class PayrollService:
         await self.db.flush()
         await self.db.refresh(item)
         return self._to_row(item)
+
+    async def export_xlsx(self, user: User, line_ids: list[int]) -> bytes:
+        ids = list(dict.fromkeys(line_ids))
+        result = await self.db.execute(
+            select(ContractLineItem)
+            .join(Contract, ContractLineItem.contract_id == Contract.id)
+            .options(
+                selectinload(ContractLineItem.contract).selectinload(Contract.client),
+                selectinload(ContractLineItem.contract).selectinload(Contract.parent),
+            )
+            .where(
+                ContractLineItem.id.in_(ids),
+                Contract.responsible_manager_id == user.id,
+                Contract.kind == ContractKind.ADDENDUM,
+            )
+            .order_by(
+                Contract.start_date.desc().nullslast(),
+                Contract.addendum_number.desc().nullslast(),
+                ContractLineItem.position,
+            )
+        )
+        items = list(result.scalars().unique().all())
+        if not items:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Нет строк для выгрузки")
+        rows = [self._to_row(item) for item in items]
+        return build_payroll_xlsx(rows)

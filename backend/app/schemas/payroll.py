@@ -35,3 +35,7 @@ class PayrollListResponse(BaseModel):
     total_to_pay: Decimal
     total_paid: Decimal
     total_all: Decimal
+
+
+class PayrollExportRequest(BaseModel):
+    line_ids: list[int] = Field(min_length=1)
