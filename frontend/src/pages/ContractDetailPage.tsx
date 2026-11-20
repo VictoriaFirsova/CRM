@@ -54,6 +54,7 @@ export default function ContractDetailPage() {
   const [lineItems, setLineItems] = useState<LineItemDraft[]>([])
   const [workDays, setWorkDays] = useState('')
   const [advancePercent, setAdvancePercent] = useState('100')
+  const [addendumDate, setAddendumDate] = useState(todayInputDate())
   const [downloading, setDownloading] = useState(false)
   const [actLoading, setActLoading] = useState(false)
   const [actDate, setActDate] = useState(todayInputDate())
@@ -86,6 +87,7 @@ export default function ContractDetailPage() {
     setAdvancePercent(
       contract.advance_percent != null ? String(contract.advance_percent) : '100',
     )
+    setAddendumDate(contract.start_date ? contract.start_date.slice(0, 10) : todayInputDate())
   }, [contract])
 
   const updateMutation = useMutation({
@@ -370,12 +372,30 @@ export default function ContractDetailPage() {
                       line_items: payload,
                       work_days: workDays ? Number(workDays) : null,
                       advance_percent: Number(advancePercent) || 100,
+                      start_date: addendumDate || todayInputDate(),
                     } as Partial<Contract>)
                   }}
                 >
                   Сохранить
                 </button>
               )}
+            </div>
+            <div className="mb-4 max-w-xs">
+              <label className="mb-1.5 block text-xs font-medium text-foreground-muted">
+                Дата приложения
+              </label>
+              <input
+                className="input"
+                type="date"
+                disabled={!canEdit}
+                value={addendumDate}
+                onChange={(e) => setAddendumDate(e.target.value)}
+                onBlur={() => {
+                  if (!canEdit || !addendumDate) return
+                  if (contract.start_date?.slice(0, 10) === addendumDate) return
+                  updateMutation.mutate({ start_date: addendumDate })
+                }}
+              />
             </div>
             <div className="mb-4">
               <AdvancePaymentFields

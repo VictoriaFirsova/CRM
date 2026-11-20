@@ -281,7 +281,8 @@ class ContractService:
                 amount = self._lines_total(data.line_items)
             else:
                 amount = data.amount if data.amount is not None else Decimal("0")
-            start_date = data.start_date
+            # Та же дата, что уходит в Word-приложение
+            start_date = data.start_date or date.today()
 
         if data.kind == ContractKind.FRAMEWORK:
             contract_status = ContractStatus.OPEN

@@ -92,6 +92,15 @@ class DocumentService:
             output_path = Path(existing.file_path)
         else:
             output_path = Path(settings.UPLOAD_DIR) / f"contract_{contract.id}.docx"
+        from datetime import date as date_cls
+
+        from app.models.enums import ContractKind
+
+        # Дата в Word = start_date приложения; если пусто — фиксируем сегодня в БД
+        if contract.kind == ContractKind.ADDENDUM and contract.start_date is None:
+            contract.start_date = date_cls.today()
+            await self.contract_repo.flush()
+
         try:
             save_contract_docx(contract, contract.client, output_path)
         except FileNotFoundError as e:
