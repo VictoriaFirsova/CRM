@@ -61,7 +61,9 @@ def _add_requisites_table(doc, variables: dict[str, str]) -> None:
             variables.get("bank_name", ""),
             f"БИК {variables.get('bik', '')}",
             f"к/с {variables.get('correspondent_account', '')}",
-            variables.get("director_name", ""),
+            variables.get("customer_director_sign")
+            or variables.get("customer_director")
+            or variables.get("director_name", ""),
         ],
     )
 

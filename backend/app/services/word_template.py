@@ -38,15 +38,25 @@ def _date_text(d: date | None) -> str:
     return f"{d.day} {MONTHS_GENITIVE[d.month - 1]} {d.year} года"
 
 
+def _days_unit(n: int) -> str:
+    n_abs = abs(n) % 100
+    if 11 <= n_abs <= 19:
+        return "рабочих дней"
+    last = n_abs % 10
+    if last == 1:
+        return "рабочий день"
+    if 2 <= last <= 4:
+        return "рабочих дня"
+    return "рабочих дней"
+
+
 def _work_days_words(n: int | None) -> str:
     if not n:
         return ""
-    return f"{n} ({_number_words_simple(n)}) рабочих дней"
+    from app.services.money_words import _int_to_words_ru
 
-
-def _number_words_simple(n: int) -> str:
-    words = {30: "тридцать", 45: "сорок пять", 60: "шестьдесят", 90: "девяносто"}
-    return words.get(n, str(n))
+    words = _int_to_words_ru(int(n))
+    return f"{n} ({words}) {_days_unit(int(n))}"
 
 
 def template_path(kind: ContractKind) -> Path:

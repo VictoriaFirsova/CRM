@@ -1,10 +1,28 @@
 """Реквизиты исполнителя (НСК) — единые для всех договоров, из .env."""
 from datetime import date
+import re
 
 from app.core.config import settings
 from app.models.client import Client
 from app.models.contract import Contract
 from app.services.money_words import format_rub_kopecks, format_rub_kopecks_with_words, rubles_in_words
+
+
+def fio_to_initials(full_name: str) -> str:
+    """«Поликанин Александр Владимирович» → «Поликанин А.В.»; уже инициалы оставляем."""
+    name = " ".join((full_name or "").split())
+    if not name:
+        return ""
+    if re.fullmatch(r"[А-ЯЁA-Z][а-яёa-z\-]+\s+[А-ЯЁA-Z]\.\s*[А-ЯЁA-Z]\.?", name):
+        return name if name.endswith(".") else f"{name}."
+    parts = name.split()
+    if len(parts) >= 3:
+        return f"{parts[0]} {parts[1][0].upper()}.{parts[2][0].upper()}."
+    if len(parts) == 2:
+        if "." in parts[1]:
+            return name if name.endswith(".") else f"{name}."
+        return f"{parts[0]} {parts[1][0].upper()}."
+    return name
 
 
 def get_executor_variables() -> dict[str, str]:
@@ -52,6 +70,7 @@ _CUSTOMER_FIELD_KEYS = (
     "full_company_name",
     "customer_full_name",
     "customer_director",
+    "customer_director_sign",
     "director_name",
     "director_name_genitive",
     "signer_position",
@@ -83,6 +102,7 @@ def get_customer_variables(client: Client | None) -> dict[str, str]:
     short = (client.company_name or full).strip()
     director = (client.director_name or "").strip()
     director_genitive = (client.director_name_genitive or director).strip()
+    director_sign = fio_to_initials(director)
     signer_position = (client.signer_position or "Генерального директора").strip()
     signer_basis = (client.signer_basis or "Устава").strip()
     inn = (client.inn or "").strip()
@@ -93,7 +113,8 @@ def get_customer_variables(client: Client | None) -> dict[str, str]:
         "customer_short_name": short,
         "full_company_name": full,
         "customer_full_name": full,
-        "customer_director": director,
+        "customer_director": director_sign,
+        "customer_director_sign": director_sign,
         "director_name": director,
         "director_name_genitive": director_genitive,
         "signer_position": signer_position,
@@ -196,7 +217,7 @@ def build_document_variables(contract: Contract, client: Client | None) -> dict[
         f"Российской Федерации (Уведомление №26.2-1). Оставшиеся {balance}% суммы, "
         f"что составляет {variables['balance_amount_full']}, без НДС, перечисляются Заказчиком "
         f"на расчетный счет Исполнителя в течении 5 (пяти) банковских дней после предоставления "
-        f"Исполнителем скан-копии Сертификата соответствия на адрес электронной почты Заказчика"
+        f"Исполнителем скан-копии Документов согласно Таблице №1 на адрес электронной почты Заказчика"
     )
     variables["table1_preamble"] = (
         "Исполнитель оказывает услуги Заказчику по подготовке необходимой "
