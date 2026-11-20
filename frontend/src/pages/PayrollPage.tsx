@@ -120,9 +120,11 @@ export default function PayrollPage() {
   ]
 
   const exportSelected = async () => {
-    const ids = items.filter((row) => selected.has(row.id)).map((row) => row.id)
+    const ids = items
+      .filter((row) => selected.has(row.id) && !row.salary_paid)
+      .map((row) => row.id)
     if (ids.length === 0) {
-      toast.error('Отметьте строки для выгрузки')
+      toast.error('Отметьте невыплаченные строки для выгрузки')
       return
     }
     setExporting(true)
@@ -331,7 +333,7 @@ export default function PayrollPage() {
 
       <p className="mt-4 text-xs text-foreground-faint">
         Формула: ((цена × 0,94) − себестоимость) × 0,7; при «÷2» — половина. Выплаченные строки не входят в «К
-        выплате». Фильтр года/месяца — по дате приложения. Отметьте строки слева и нажмите «В Excel».
+        выплате». Фильтр года/месяца — по дате приложения.         Отметьте невыплаченные строки слева и нажмите «В Excel» (колонка «Выплачено» в файл не попадает).
       </p>
     </div>
   )

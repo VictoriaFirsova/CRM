@@ -157,7 +157,12 @@ class PayrollService:
             )
         )
         items = list(result.scalars().unique().all())
+        # В Excel только невыплаченные
+        items = [item for item in items if not item.salary_paid]
         if not items:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Нет строк для выгрузки")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Среди выбранных нет невыплаченных строк",
+            )
         rows = [self._to_row(item) for item in items]
         return build_payroll_xlsx(rows)

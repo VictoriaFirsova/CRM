@@ -18,7 +18,6 @@ HEADERS = (
     "Себ-ть",
     "В ЗП",
     "÷2",
-    "Выплачено",
 )
 
 PAYMENT_LABELS = {
@@ -60,9 +59,8 @@ def build_payroll_xlsx(rows: list[PayrollLineResponse]) -> bytes:
         ws.cell(r_idx, 5, float(row.cost_price) if row.cost_price is not None else None)
         ws.cell(r_idx, 6, float(row.reward_mine))
         ws.cell(r_idx, 7, "да" if row.share_half else "нет")
-        ws.cell(r_idx, 8, "да" if row.salary_paid else "нет")
 
-    widths = (28, 22, 36, 12, 12, 12, 8, 12)
+    widths = (28, 22, 36, 12, 12, 12, 8)
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[chr(64 + i)].width = w
 
