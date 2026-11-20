@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { getApiErrorMessage } from '../utils/apiError'
@@ -49,10 +49,7 @@ export default function LoginPage() {
             {loading ? 'Вход...' : 'Войти'}
           </button>
           <p className="text-center text-sm text-foreground-muted">
-            Нет аккаунта?{' '}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Регистрация
-            </Link>
+            Учётку создаёт администратор CRM
           </p>
         </form>
       </div>

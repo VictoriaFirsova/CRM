@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientsPage from './pages/ClientsPage'
 import ClientDetailPage from './pages/ClientDetailPage'
@@ -11,6 +10,7 @@ import ContractDetailPage from './pages/ContractDetailPage'
 import DocumentsPage from './pages/DocumentsPage'
 import InvoicesPage from './pages/InvoicesPage'
 import ActsPage from './pages/ActsPage'
+import UsersPage from './pages/UsersPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -23,7 +23,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route
         element={
           <PrivateRoute>
@@ -39,6 +39,7 @@ export default function App() {
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="acts" element={<ActsPage />} />
         <Route path="documents" element={<DocumentsPage />} />
+        <Route path="users" element={<UsersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth, acts, clients, contracts, dashboard, documents, invoices, payments
+from app.routers import auth, acts, clients, contracts, dashboard, documents, invoices, payments, users
 from app.routers import settings as settings_router
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
 app.include_router(clients.router, prefix="/api")
 app.include_router(contracts.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")

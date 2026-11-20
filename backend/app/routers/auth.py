@@ -1,11 +1,17 @@
 from fastapi import APIRouter
 
+from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
 from app.repositories.user import UserRepository
 from app.schemas.auth import RefreshRequest, TokenResponse, UserLogin, UserRegister, UserResponse
 from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/registration-open")
+async def registration_open():
+    return {"open": settings.ALLOW_PUBLIC_REGISTER}
 
 
 @router.post("/register", response_model=UserResponse)

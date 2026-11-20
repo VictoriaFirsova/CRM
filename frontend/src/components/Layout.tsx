@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   FileText,
   FileSpreadsheet,
   FileCheck,
@@ -29,6 +30,7 @@ const pageTitles: Record<string, string> = {
   '/invoices': 'Счета',
   '/acts': 'Акты',
   '/documents': 'Документы',
+  '/users': 'Пользователи',
 }
 
 export default function Layout() {
@@ -64,6 +66,18 @@ export default function Layout() {
               </NavLink>
             </div>
           ))}
+          {user?.role === 'ADMIN' && (
+            <div className="flex flex-col items-center">
+              <div className="sidebar-divider w-8" />
+              <NavLink
+                to="/users"
+                title="Пользователи"
+                className={({ isActive }) => `nav-icon-btn ${isActive ? 'active' : ''}`}
+              >
+                <UserCog size={20} strokeWidth={1.75} />
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-divider w-8" />
