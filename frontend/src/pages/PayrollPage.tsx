@@ -90,12 +90,12 @@ export default function PayrollPage() {
     <div>
       <PageHeader
         title="Расчёт ЗП"
-        subtitle="Строки таблицы №1 по оплаченным и предоплаченным договорам, где вы ответственный"
+        subtitle="Строки таблицы №1 из оплаченных и предоплаченных приложений, где вы ответственный"
       />
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-foreground-muted">Год</span>
+          <span className="text-foreground-muted">Год приложения</span>
           <select className="input" value={year} onChange={(e) => setYear(e.target.value)}>
             <option value="">Все</option>
             {years.map((y) => (
@@ -106,7 +106,7 @@ export default function PayrollPage() {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-foreground-muted">Месяц даты начала</span>
+          <span className="text-foreground-muted">Месяц приложения</span>
           <select className="input" value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">Все</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -252,7 +252,7 @@ export default function PayrollPage() {
 
       <p className="mt-4 text-xs text-foreground-faint">
         Формула: ((цена × 0,94) − себестоимость) × 0,7; при «÷2» — половина. Выплаченные строки не входят в «К
-        выплате». Фильтр года/месяца — по дате начала договора (если пустая — по дате создания).
+        выплате». Фильтр года/месяца — по дате приложения.
       </p>
     </div>
   )

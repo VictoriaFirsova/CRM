@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
-from sqlalchemy import extract, or_, select
+from sqlalchemy import extract, select
 from sqlalchemy.orm import selectinload
 
 from app.models.contract import Contract
@@ -37,13 +37,6 @@ class PayrollService:
             return f"{parent_num} · прил. №{contract.addendum_number}"
         return contract.contract_number
 
-    def _year_of(self, contract: Contract) -> int | None:
-        if contract.start_date:
-            return contract.start_date.year
-        if contract.created_at:
-            return contract.created_at.year
-        return None
-
     def _to_row(self, item: ContractLineItem) -> PayrollLineResponse:
         contract = item.contract
         full, mine = compute_rewards(item.price, item.cost_price, item.share_half)
@@ -62,7 +55,7 @@ class PayrollService:
             reward_mine=mine,
             payment_status=contract.payment_status,
             start_date=contract.start_date,
-            year=self._year_of(contract),
+            year=contract.start_date.year if contract.start_date else None,
         )
 
     async def list_lines(
@@ -81,29 +74,21 @@ class PayrollService:
             )
             .where(
                 Contract.responsible_manager_id == user.id,
+                Contract.kind == ContractKind.ADDENDUM,
                 Contract.payment_status.in_([PaymentStatus.PAID, PaymentStatus.PARTIALLY_PAID]),
             )
         )
+        # Год/месяц — дата приложения (start_date у ADDENDUM)
         if year is not None:
-            query = query.where(
-                or_(
-                    extract("year", Contract.start_date) == year,
-                    (Contract.start_date.is_(None) & (extract("year", Contract.created_at) == year)),
-                )
-            )
+            query = query.where(extract("year", Contract.start_date) == year)
         if month is not None:
-            query = query.where(
-                or_(
-                    extract("month", Contract.start_date) == month,
-                    (Contract.start_date.is_(None) & (extract("month", Contract.created_at) == month)),
-                )
-            )
+            query = query.where(extract("month", Contract.start_date) == month)
         if hide_paid:
             query = query.where(ContractLineItem.salary_paid.is_(False))
 
         query = query.order_by(
             Contract.start_date.desc().nullslast(),
-            Contract.created_at.desc(),
+            Contract.addendum_number.desc().nullslast(),
             ContractLineItem.position,
         )
         result = await self.db.execute(query)
