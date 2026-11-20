@@ -49,6 +49,10 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(
             f"Нет связи с PostgreSQL ({user}@{host}). Проверьте DATABASE_URL. Оригинал: {last_error}"
         ) from last_error
+
+    from app.services.bootstrap_admin import ensure_bootstrap_admin
+
+    await ensure_bootstrap_admin()
     yield
 
 

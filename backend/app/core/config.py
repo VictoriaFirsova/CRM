@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     STATIC_DIR: str = ""
     # Публичная /register. На проде держите false — пользователей создаёт ADMIN.
     ALLOW_PUBLIC_REGISTER: bool = False
+    # Одноразовый бутстрап админа через Variables на Railway (без Shell).
+    # После входа удалите BOOTSTRAP_ADMIN_PASSWORD из Variables.
+    BOOTSTRAP_ADMIN_EMAIL: str = ""
+    BOOTSTRAP_ADMIN_PASSWORD: str = ""
+    BOOTSTRAP_ADMIN_NAME: str = "Administrator"
     DADATA_API_KEY: str = ""
     # Исполнитель (НСК) — один на все договоры; director = генеральный директор (одно лицо)
     EXECUTOR_SHORT_NAME: str = "ООО «НСК-Серт»"
