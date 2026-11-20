@@ -41,6 +41,13 @@ function money(n: number) {
   }).format(n)
 }
 
+function formatDate(iso?: string | null) {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('ru-RU')
+}
+
 export default function PayrollPage() {
   const now = new Date()
   const [year, setYear] = useState<string>(String(now.getFullYear()))
@@ -99,7 +106,7 @@ export default function PayrollPage() {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-foreground-muted">Месяц</span>
+          <span className="text-foreground-muted">Месяц даты начала</span>
           <select className="input" value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">Все</option>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -142,31 +149,39 @@ export default function PayrollPage() {
           <p>Нет подходящих строк. Нужны оплаченные/предоплаченные договоры с таблицей №1.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-surface-border">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-surface-sidebar text-xs uppercase tracking-wide text-foreground-muted">
+        <div className="table-wrap">
+          <table className="data-table table-fixed min-w-[960px]">
+            <colgroup>
+              <col className="w-[18%]" />
+              <col className="w-[14%]" />
+              <col className="w-[22%]" />
+              <col className="w-[11%]" />
+              <col className="w-[12%]" />
+              <col className="w-[11%]" />
+              <col className="w-[6%]" />
+              <col className="w-[6%]" />
+            </colgroup>
+            <thead>
               <tr>
-                <th className="px-3 py-2 font-medium">Договор</th>
-                <th className="px-3 py-2 font-medium">Документ</th>
-                <th className="px-3 py-2 font-medium">Продукция</th>
-                <th className="px-3 py-2 font-medium text-right">Цена</th>
-                <th className="px-3 py-2 font-medium text-right">Себ-ть</th>
-                <th className="px-3 py-2 font-medium text-right">В ЗП</th>
-                <th className="px-3 py-2 font-medium text-center" title="Если оформляли вдвоём — половина">
+                <th>Договор</th>
+                <th>Документ</th>
+                <th>Продукция</th>
+                <th className="text-right">Цена</th>
+                <th className="text-right">Себ-ть</th>
+                <th className="text-right">В ЗП</th>
+                <th className="text-center" title="Если оформляли вдвоём — половина">
                   ÷2
                 </th>
-                <th className="px-3 py-2 font-medium text-center">Выплачено</th>
+                <th className="text-center">Выплачено</th>
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
                 <tr
                   key={row.id}
-                  className={`border-t border-surface-border/80 ${
-                    row.salary_paid ? 'bg-surface-sidebar/30 opacity-70' : ''
-                  }`}
+                  className={row.salary_paid ? 'opacity-60' : undefined}
                 >
-                  <td className="px-3 py-2 align-top">
+                  <td>
                     <Link to={`/contracts/${row.contract_id}`} className="font-medium text-primary hover:underline">
                       {row.contract_label}
                     </Link>
@@ -175,21 +190,18 @@ export default function PayrollPage() {
                     )}
                     <div className="text-[11px] text-foreground-faint">
                       {paymentStatusLabels[row.payment_status]}
+                      {formatDate(row.start_date) ? ` · ${formatDate(row.start_date)}` : ''}
                     </div>
                   </td>
-                  <td className="px-3 py-2 align-top max-w-[12rem]">{row.document_name}</td>
-                  <td className="px-3 py-2 align-top max-w-[16rem] text-foreground-muted">
-                    {row.product_name}
-                  </td>
-                  <td className="px-3 py-2 align-top text-right whitespace-nowrap">
-                    {money(Number(row.price))}
-                  </td>
-                  <td className="px-3 py-2 align-top">
+                  <td className="break-words">{row.document_name}</td>
+                  <td className="break-words text-foreground-muted">{row.product_name}</td>
+                  <td className="text-right whitespace-nowrap tabular-nums">{money(Number(row.price))}</td>
+                  <td>
                     <input
                       type="number"
                       min={0}
                       step="0.01"
-                      className="input w-28 text-right"
+                      className="input w-full min-w-0 px-2 py-1.5 text-right tabular-nums"
                       defaultValue={row.cost_price != null ? Number(row.cost_price) : ''}
                       key={`${row.id}-${row.cost_price}`}
                       onBlur={(e) => {
@@ -208,10 +220,10 @@ export default function PayrollPage() {
                       }}
                     />
                   </td>
-                  <td className="px-3 py-2 align-top text-right font-medium whitespace-nowrap">
+                  <td className="text-right font-medium whitespace-nowrap tabular-nums">
                     {money(Number(row.reward_mine))}
                   </td>
-                  <td className="px-3 py-2 align-top text-center">
+                  <td className="text-center">
                     <input
                       type="checkbox"
                       checked={row.share_half}
@@ -221,7 +233,7 @@ export default function PayrollPage() {
                       }
                     />
                   </td>
-                  <td className="px-3 py-2 align-top text-center">
+                  <td className="text-center">
                     <input
                       type="checkbox"
                       checked={row.salary_paid}
@@ -240,7 +252,7 @@ export default function PayrollPage() {
 
       <p className="mt-4 text-xs text-foreground-faint">
         Формула: ((цена × 0,94) − себестоимость) × 0,7; при «÷2» — половина. Выплаченные строки не входят в «К
-        выплате».
+        выплате». Фильтр года/месяца — по дате начала договора (если пустая — по дате создания).
       </p>
     </div>
   )
